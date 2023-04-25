@@ -19,7 +19,7 @@ export class ProductsAppStack extends cdk.Stack {
       },
       tableName: 'products',
       removalPolicy: cdk.RemovalPolicy.DESTROY,
-      billingMode: dynamobdb.BillingMode.PAY_PER_REQUEST,
+      billingMode: dynamobdb.BillingMode.PROVISIONED,
       readCapacity: 1,
       writeCapacity: 1,
     })
