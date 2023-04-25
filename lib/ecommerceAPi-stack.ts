@@ -17,6 +17,7 @@ export class EcommerceApiStack extends cdk.Stack {
 
     const api = new apigateway.RestApi(this, 'ECommerceApi', {
       restApiName: 'ECommerceApi',
+      cloudWatchRole: true,
       deployOptions: {
         accessLogDestination: new apigateway.LogGroupLogDestination(logGroup),
         accessLogFormat: apigateway.AccessLogFormat.jsonWithStandardFields({
