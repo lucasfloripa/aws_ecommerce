@@ -1,4 +1,3 @@
-import * as lambda from 'aws-cdk-lib/aws-lambda'
 import * as lambdaNodeJS from 'aws-cdk-lib/aws-lambda-nodejs'
 import * as dynamobdb from 'aws-cdk-lib/aws-dynamodb'
 import * as cdk from 'aws-cdk-lib'
