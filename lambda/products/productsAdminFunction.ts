@@ -1,4 +1,10 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda";
+import { DynamoDB } from "aws-sdk";
+import { Product, ProductRepository } from "/opt/nodejs/productsLayer";
+
+const productsTable = process.env.PRODUCTS_TABLE_NAME!
+const ddbClient = new DynamoDB.DocumentClient()
+const productRepository = new ProductRepository(ddbClient, productsTable)
 
 export async function handler(event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult>{
   const method = event.httpMethod;
@@ -9,25 +15,38 @@ export async function handler(event: APIGatewayProxyEvent, context: Context): Pr
 
   if(event.resource === '/products') {
     console.log('POST /products') 
+
+    const product = JSON.parse(event.body!) as Product
+
+    const productCreated = await productRepository.createProduct(product)
+
       return {
         statusCode: 201,
-        body: 'POST /products - OK'
+        body: JSON.stringify(productCreated)
       }
   } else if(event.resource === '/products/{id}') {
     const productId = event.pathParameters!.id as string
+
+    const product = JSON.parse(event.body!) as Product
+
+    const productUpdated = await productRepository.updateProduct(productId, product)
+
     if(method === 'PUT') {
-      console.log(`PUT /products/${productId}`) 
-        return {
-          statusCode: 200,
-          body: 'PUT /products - OK'
-        }
+    console.log(`PUT /products/${productId}`) 
+      return {
+        statusCode: 200,
+        body: JSON.stringify(productUpdated)
+      }
     }
     if(method === 'DELETE') {
       console.log(`DELETE /products/${productId}`) 
-        return {
-          statusCode: 200,
-          body: 'DELETE /products - OK'
-        }
+
+      const productDeleted = await productRepository.deleteProduct(productId)
+
+      return {
+        statusCode: 200,
+        body: JSON.stringify(productDeleted)
+      }
     }
   }
 

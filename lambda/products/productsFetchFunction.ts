@@ -1,4 +1,10 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda";
+import { ProductRepository } from "/opt/nodejs/productsLayer";
+import { DynamoDB } from 'aws-sdk'
+
+const productsTable = process.env.PRODUCTS_TABLE_NAME!
+const ddbClient = new DynamoDB.DocumentClient()
+const productRepository = new ProductRepository(ddbClient, productsTable)
 
 export async function handler(event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult>{
   const method = event.httpMethod;
@@ -11,11 +17,11 @@ export async function handler(event: APIGatewayProxyEvent, context: Context): Pr
     if( method === "GET") {
       console.log("GET /products")
 
+      const products = await productRepository.getAllProducts()
+
       return {
         statusCode: 200,
-        body: JSON.stringify({
-          message: 'GET Products - OK'
-        })
+        body: JSON.stringify(products)
       }
     }
   } else if (event.resource === "/products/{id}") {
@@ -23,11 +29,10 @@ export async function handler(event: APIGatewayProxyEvent, context: Context): Pr
       const productId = event.pathParameters!.id as string
       console.log(`GET /products/${productId}`)
 
+      const product = await productRepository.getProductById(productId)
       return {
         statusCode: 200,
-        body: JSON.stringify({
-          message: 'GET Product ID - OK'
-        })
+        body: JSON.stringify(product)
       }
     }
   }
