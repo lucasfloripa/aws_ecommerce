@@ -1,6 +1,9 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda";
 import { ProductRepository } from "/opt/nodejs/productsLayer";
 import { DynamoDB } from 'aws-sdk'
+import * as AWSXRay from 'aws-xray-sdk'
+
+AWSXRay.captureAWS(require("aws-sdk"))
 
 const productsTable = process.env.PRODUCTS_TABLE_NAME!
 const ddbClient = new DynamoDB.DocumentClient()
