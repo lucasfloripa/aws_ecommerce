@@ -5,14 +5,19 @@ import * as ssm from 'aws-cdk-lib/aws-ssm'
 import * as lambda from 'aws-cdk-lib/aws-lambda'
 import { Construct } from 'constructs'
 
+interface ProductsAppStackProps extends cdk.StackProps {
+  eventsDdb: dynamobdb.Table
+}
+
 export class ProductsAppStack extends cdk.Stack {
   readonly productsFetchHandler: lambdaNodeJS.NodejsFunction
   readonly productsAdminHandler: lambdaNodeJS.NodejsFunction
   readonly productsTable: dynamobdb.Table
 
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string, props: ProductsAppStackProps) {
     super(scope, id, props)
 
+    // DYNAMO TABLE
     this.productsTable = new dynamobdb.Table(this, 'ProductsTable', {
       partitionKey: {
         name: 'id',
@@ -25,9 +30,30 @@ export class ProductsAppStack extends cdk.Stack {
       writeCapacity: 1,
     })
 
+    // LAMBDA LAYERS
     const productsLayerArn = ssm.StringParameter.valueForStringParameter(this, 'ProductsLayerVersionArn')
     const productsLayer = lambda.LayerVersion.fromLayerVersionArn(this, 'ProductsLayerVersionArn', productsLayerArn)
 
+    // LAMBDA FUNCTION
+    const productsEventsHandler = new lambdaNodeJS.NodejsFunction(this, 'ProductsEventsFunction', {
+      functionName: 'ProductsEventsFunction',
+      entry: 'lambda/products/productsEventsFunction.ts',
+      handler: 'handler',
+      memorySize: 128,
+      timeout: cdk.Duration.seconds(2),
+      bundling: {
+        minify: true,
+        sourceMap: false
+      },
+      environment: {
+        EVENTS_TABLE_NAME: props.eventsDdb.tableName
+      },
+      tracing: lambda.Tracing.ACTIVE,
+      insightsVersion: lambda.LambdaInsightsVersion.VERSION_1_0_119_0
+    })
+    props.eventsDdb.grantWriteData(productsEventsHandler)
+
+    // LAMBDA FUNCTION
     this.productsFetchHandler = new lambdaNodeJS.NodejsFunction(this, 'ProductsFetchFunction', {
       functionName: 'ProductsFetchFunction',
       entry: 'lambda/products/productsFetchFunction.ts',
@@ -45,9 +71,9 @@ export class ProductsAppStack extends cdk.Stack {
       tracing: lambda.Tracing.ACTIVE,
       insightsVersion: lambda.LambdaInsightsVersion.VERSION_1_0_119_0
     })
-
     this.productsTable.grantReadData(this.productsFetchHandler)
 
+    // LAMBDA FUNCTION
     this.productsAdminHandler = new lambdaNodeJS.NodejsFunction(this, 'ProductsAdminFunction', {
       functionName: 'ProductsAdminFunction',
       entry: 'lambda/products/productsAdminFunction.ts',
@@ -59,13 +85,14 @@ export class ProductsAppStack extends cdk.Stack {
         sourceMap: false
       },
       environment: {
-        PRODUCTS_TABLE_NAME: this.productsTable.tableName
+        PRODUCTS_TABLE_NAME: this.productsTable.tableName,
+        PRODUCT_EVENTS_FUCTION_NAME: productsEventsHandler.functionName
       },
       layers: [productsLayer],
       tracing: lambda.Tracing.ACTIVE,
       insightsVersion: lambda.LambdaInsightsVersion.VERSION_1_0_119_0
     })
     this.productsTable.grantReadWriteData(this.productsAdminHandler)
-
+    productsEventsHandler.grantInvoke(this.productsAdminHandler)
   }
 }
