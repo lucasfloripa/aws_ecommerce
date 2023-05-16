@@ -39,9 +39,9 @@ export class ProductsAppStack extends cdk.Stack {
     const productEventsLayer = lambda.LayerVersion.fromLayerVersionArn(this, 'ProductEventsLayerVersionArn', productEventsLayerArn)
 
     // PRODUCT EVENT LAMBDA
-    const productsEventsHandler = new lambdaNodeJS.NodejsFunction(this, 'ProductsEventsFunction', {
-      functionName: 'ProductsEventsFunction',
-      entry: 'lambda/products/productsEventsFunction.ts',
+    const productEventsHandler = new lambdaNodeJS.NodejsFunction(this, 'ProductEventsFunction', {
+      functionName: 'ProductEventsFunction',
+      entry: 'lambda/products/productEventsFunction.ts',
       handler: 'handler',
       memorySize: 128,
       timeout: cdk.Duration.seconds(2),
@@ -56,7 +56,7 @@ export class ProductsAppStack extends cdk.Stack {
       tracing: lambda.Tracing.ACTIVE,
       insightsVersion: lambda.LambdaInsightsVersion.VERSION_1_0_119_0
     })
-    props.eventsDdb.grantWriteData(productsEventsHandler)
+    props.eventsDdb.grantWriteData(productEventsHandler)
 
     // PRODUCT FETCH LAMBDA
     this.productsFetchHandler = new lambdaNodeJS.NodejsFunction(this, 'ProductsFetchFunction', {
@@ -91,13 +91,13 @@ export class ProductsAppStack extends cdk.Stack {
       },
       environment: {
         PRODUCTS_TABLE_NAME: this.productsTable.tableName,
-        PRODUCT_EVENTS_FUCTION_NAME: productsEventsHandler.functionName
+        PRODUCT_EVENTS_FUCTION_NAME: productEventsHandler.functionName
       },
       layers: [productsLayer, productEventsLayer],
       tracing: lambda.Tracing.ACTIVE,
       insightsVersion: lambda.LambdaInsightsVersion.VERSION_1_0_119_0
     })
     this.productsTable.grantReadWriteData(this.productsAdminHandler)
-    productsEventsHandler.grantInvoke(this.productsAdminHandler)
+    productEventsHandler.grantInvoke(this.productsAdminHandler)
   }
 }
