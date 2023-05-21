@@ -50,7 +50,7 @@ export class ProductsAppStack extends cdk.Stack {
         sourceMap: false
       },
       environment: {
-        EVENTS_TABLE_NAME: props.eventsDdb.tableName
+        EVENTS_DDB: props.eventsDdb.tableName
       },
       layers: [productEventsLayer],
       tracing: lambda.Tracing.ACTIVE,
