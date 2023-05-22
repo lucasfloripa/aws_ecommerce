@@ -6,7 +6,7 @@ AWSXRay.captureAWS(require('aws-sdk'))
 
 import { ProductEvent } from "/opt/nodejs/productEventsLayer";
 
-const eventsDdb = process.env.EVENTS_DDB as string
+const eventsDdb = process.env.EVENTS_DDB!
 const ddbClient = new DynamoDB.DocumentClient()
 
 export async function handler(event: ProductEvent, context: Context, callback: Callback): Promise<void> { 
