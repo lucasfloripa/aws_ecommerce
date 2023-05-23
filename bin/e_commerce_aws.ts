@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
-import { EcommerceApiStack, ProductsAppStack, ProductsAppLayersStack, EventsDdbStack } from '../lib'
+import { EcommerceApiStack, ProductsAppStack, ProductsAppLayersStack, EventsDdbStack, OrderAppLayersStack, OrdersAppStack } from '../lib'
 
 const app = new cdk.App();
 
@@ -25,13 +25,25 @@ const productsAppStack = new ProductsAppStack(app, 'ProductsApp', {
   eventsDdb: eventsDdbStack.table
 })
 
+const ordersAppLayerStack = new OrderAppLayersStack(app, 'OrdersAppLayers', { env, tags })
+
+const ordersAppStack = new OrdersAppStack(app, 'OrdersApp', {
+  tags,
+  env,
+  productsTable: productsAppStack.productsTable
+})
+
 const ecommerceApiStack = new EcommerceApiStack(app, 'EcommerceApi', {
   env,
   tags,
   productsFetchHandler: productsAppStack.productsFetchHandler,
-  productsAdminHandler: productsAppStack.productsAdminHandler
+  productsAdminHandler: productsAppStack.productsAdminHandler,
+  ordersHandler: ordersAppStack.ordersHandler
 })
 
 productsAppStack.addDependency(productsAppLayersStack)
 productsAppStack.addDependency(eventsDdbStack)
+ordersAppStack.addDependency(ordersAppLayerStack)
+ordersAppStack.addDependency(productsAppStack)
 ecommerceApiStack.addDependency(productsAppStack)
+ecommerceApiStack.addDependency(ordersAppStack)
