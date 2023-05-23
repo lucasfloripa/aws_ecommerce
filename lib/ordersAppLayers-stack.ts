@@ -8,7 +8,7 @@ export class OrderAppLayersStack extends cdk.Stack {
     super(scope, id, props)
 
     const ordersLayer = new lambda.LayerVersion(this, 'OrdersLayer', {
-      code: lambda.Code.fromAsset('labdata/orders/layers/ordersLayer'),
+      code: lambda.Code.fromAsset('lambda/orders/layers/ordersLayer'),
       compatibleRuntimes: [lambda.Runtime.NODEJS_14_X],
       layerVersionName: 'OrdersLayer',
       removalPolicy: cdk.RemovalPolicy.RETAIN
