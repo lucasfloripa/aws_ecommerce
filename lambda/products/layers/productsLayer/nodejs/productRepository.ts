@@ -14,7 +14,7 @@ export class ProductRepository {
   private ddbClient: DocumentClient
   private productsTable: string
 
-  constructor(ddbClient: DocumentClient, productsTable: string){
+  constructor(ddbClient: DocumentClient, productsTable: string) {
     this.ddbClient = ddbClient
     this.productsTable = productsTable
   }
@@ -36,6 +36,23 @@ export class ProductRepository {
     }
     const result = await this.ddbClient.get(params).promise()
     return result.Item as Product
+  }
+
+  getProductsByIds = async (productsIds: string[]): Promise<Product[]> => {
+    const keys: { id: string }[] = []
+    productsIds.forEach(productId => {
+      keys.push({
+        id: productId
+      })
+    })
+    const data = await this.ddbClient.batchGet({
+      RequestItems: {
+        [this.productsTable]: {
+          Keys: keys
+        }
+      }
+    }).promise()
+    return data.Responses![this.productsTable] as Product[]
   }
 
   createProduct = async (product: Product): Promise<Product> => {
