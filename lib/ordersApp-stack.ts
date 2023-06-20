@@ -15,7 +15,7 @@ export class OrdersAppStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: OrdersAppStackProps) {
     super(scope, id, props)
 
-    // ORDER TABLE
+    // ORDERS TABLE
     const ordersTable = new dynamobdb.Table(this, 'OrdersTable', {
       tableName: 'orders',
       partitionKey: {
@@ -34,7 +34,9 @@ export class OrdersAppStack extends cdk.Stack {
     // ORDERS LAYER
     const ordersLayerArn = ssm.StringParameter.valueForStringParameter(this, 'OrdersLayerVersionArn')
     const ordersLayer = lambda.LayerVersion.fromLayerVersionArn(this, 'OrdersLayerVersionArn', ordersLayerArn)
-
+    // ORDERS API LAYER
+    const ordersApiLayerArn = ssm.StringParameter.valueForStringParameter(this, 'OrdersApiLayerVersionArn')
+    const ordersApiLayer = lambda.LayerVersion.fromLayerVersionArn(this, 'OrdersApiLayerVersionArn', ordersApiLayerArn)
     // PRODUCT LAYER
     const productsLayerArn = ssm.StringParameter.valueForStringParameter(this, 'ProductsLayerVersionArn')
     const productsLayer = lambda.LayerVersion.fromLayerVersionArn(this, 'ProductsLayerVersionArn', productsLayerArn)
@@ -54,10 +56,11 @@ export class OrdersAppStack extends cdk.Stack {
         ORDERS_TABLE: ordersTable.tableName,
         PRODUCTS_TABLE: props.productsTable.tableName
       },
-      layers: [ordersLayer, productsLayer],
+      layers: [ordersLayer, ordersApiLayer, productsLayer],
       tracing: lambda.Tracing.ACTIVE,
       insightsVersion: lambda.LambdaInsightsVersion.VERSION_1_0_119_0
     })
+    // TABLES ACCESS PERMISSIONS
     ordersTable.grantReadWriteData(this.ordersHandler)
     props.productsTable.grantReadData(this.ordersHandler)
   }
