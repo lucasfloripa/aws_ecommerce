@@ -35,7 +35,7 @@ export interface OrderResponse {
   createdAt: number,
   billing: {
     payment: PaymentType,
-    totalPrince: number
+    totalPrice: number
   },
   shipping: {
     type: ShippingType,

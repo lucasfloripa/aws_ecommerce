@@ -2,7 +2,7 @@ import { DynamoDB } from "aws-sdk"
 import * as AWSXRay from 'aws-xray-sdk'
 import { Order, OrderRepository } from "/opt/nodejs/ordersLayer"
 import { Product, ProductRepository } from "/opt/nodejs/productsLayer"
-import { OrderRequest, OrderProductResponse } from "/opt/nodejs/ordersApiLayer"
+import { OrderRequest, OrderProductResponse, OrderResponse, PaymentType, ShippingType, CarrierType } from "/opt/nodejs/ordersApiLayer"
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda"
 
 AWSXRay.captureAWS(require('aws-sdk'))
@@ -51,6 +51,34 @@ export async function handler(event: APIGatewayProxyEvent, context: Context): Pr
   }
 }
 
+function convertToOrderResponse (order: Order): OrderResponse {
+  const orderProducts: OrderProductResponse[] = []
+
+  order.products.forEach(product => {
+    orderProducts.push({
+      code: product.code,
+      price: product.price
+    })
+  })
+
+  const orderResponse: OrderResponse = {
+    email: order.pk,
+    id: order.sk!,
+    createdAt: order.createdAt!,
+    products: orderProducts,
+    billing: {
+      payment: order.billing.payment as PaymentType,
+      totalPrice: order.billing.totalPrice
+    },
+    shipping: {
+      type: order.shipping.type as ShippingType,
+      carrier: order.shipping.carrier as CarrierType
+    }
+  }
+
+  return orderResponse
+}
+
 function buildOrder(orderRequest: OrderRequest, products: Product[]): Order {
   const orderProducts: OrderProductResponse[] = []
   let totalPrice: number = 0
@@ -74,6 +102,6 @@ function buildOrder(orderRequest: OrderRequest, products: Product[]): Order {
     },
     products: orderProducts,
   }
-  
+
   return order
 }
