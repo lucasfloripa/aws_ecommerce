@@ -28,21 +28,59 @@ export async function handler(event: APIGatewayProxyEvent, context: Context): Pr
       const orderId = event.queryStringParameters!.orderId
       if (email) {
         if (orderId) {
-
+          // Get one order from an user
+          const order = await orderRepository.getOrder(email, orderId)
+          return {
+            statusCode: 200,
+            body: JSON.stringify(convertToOrderResponse(order))
+          }
         } else {
-
+          //Get all orders from an user
+          const orders = await orderRepository.getOrdersByEmail(email)
+          return {
+            statusCode: 200,
+            body: JSON.stringify(orders.map(convertToOrderResponse))
+          }
         }
       }
     } else {
-
+      // Get all orders
+      const orders = await orderRepository.getAllOrders()
+      return {
+        statusCode: 200,
+        body: JSON.stringify(orders.map(convertToOrderResponse))
+      }
     }
   } else if (method === 'POST') {
     console.log('POST /orders')
+    const orderRequest = JSON.parse(event.body!) as OrderRequest
+    const products = await productRepository.getProductsByIds(orderRequest.productsIds)
+    if(products.length === orderRequest.productsIds.length){
+      const order = buildOrder(orderRequest, products)
+      const orderCreated = await orderRepository.createOrder(order)
+
+        return {
+          statusCode: 201,
+          body: JSON.stringify(convertToOrderResponse(orderCreated))
+        }
+    } else {
+      return {
+        statusCode: 404,
+        body: "Soome product was not found"
+      }
+    }
 
   } else if (method === 'DELETE') {
     console.log('DELETE /orders')
-    const email = event.queryStringParameters!.email
-    const orderId = event.queryStringParameters!.orderId
+    const email = event.queryStringParameters!.email!
+    const orderId = event.queryStringParameters!.orderId!
+
+    const orderDeleted = await orderRepository.deleteOrder(email, orderId)
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify(convertToOrderResponse(orderDeleted))
+    }
   }
 
   return {
