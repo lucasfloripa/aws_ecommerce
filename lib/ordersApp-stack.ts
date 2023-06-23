@@ -39,6 +39,9 @@ export class OrdersAppStack extends cdk.Stack {
     // ORDERS API LAYER
     const ordersApiLayerArn = ssm.StringParameter.valueForStringParameter(this, 'OrdersApiLayerVersionArn')
     const ordersApiLayer = lambda.LayerVersion.fromLayerVersionArn(this, 'OrdersApiLayerVersionArn', ordersApiLayerArn)
+    // ORDER EVENTS LAYER
+    const orderEventsLayerArn = ssm.StringParameter.valueForStringParameter(this, 'OrderEventsLayerVersionArn')
+    const orderEventsLayer = lambda.LayerVersion.fromLayerVersionArn(this, 'OrderEventsLayerVersionArn', orderEventsLayerArn)
     // PRODUCT LAYER
     const productsLayerArn = ssm.StringParameter.valueForStringParameter(this, 'ProductsLayerVersionArn')
     const productsLayer = lambda.LayerVersion.fromLayerVersionArn(this, 'ProductsLayerVersionArn', productsLayerArn)
@@ -62,12 +65,15 @@ export class OrdersAppStack extends cdk.Stack {
       },
       environment: {
         ORDERS_TABLE: ordersTable.tableName,
-        PRODUCTS_TABLE: props.productsTable.tableName
+        PRODUCTS_TABLE: props.productsTable.tableName,
+        ORDER_EVENTS_TOPIC_ARN: orderTopic.topicArn
       },
-      layers: [ordersLayer, ordersApiLayer, productsLayer],
+      layers: [ordersLayer, ordersApiLayer, productsLayer, orderEventsLayer],
       tracing: lambda.Tracing.ACTIVE,
       insightsVersion: lambda.LambdaInsightsVersion.VERSION_1_0_119_0
     })
+    // TOPIC ACCESS PERMISSIONS
+    orderTopic.grantPublish(this.ordersHandler)
     // TABLES ACCESS PERMISSIONS
     ordersTable.grantReadWriteData(this.ordersHandler)
     props.productsTable.grantReadData(this.ordersHandler)
