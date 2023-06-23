@@ -3,6 +3,8 @@ import * as dynamobdb from 'aws-cdk-lib/aws-dynamodb'
 import * as cdk from 'aws-cdk-lib'
 import * as ssm from 'aws-cdk-lib/aws-ssm'
 import * as lambda from 'aws-cdk-lib/aws-lambda'
+import * as sns from 'aws-cdk-lib/aws-sns'
+import * as subs from 'aws-cdk-lib/aws-sns-subscriptions'
 import { Construct } from 'constructs'
 
 interface OrdersAppStackProps extends cdk.StackProps {
@@ -40,6 +42,12 @@ export class OrdersAppStack extends cdk.Stack {
     // PRODUCT LAYER
     const productsLayerArn = ssm.StringParameter.valueForStringParameter(this, 'ProductsLayerVersionArn')
     const productsLayer = lambda.LayerVersion.fromLayerVersionArn(this, 'ProductsLayerVersionArn', productsLayerArn)
+
+    // ORDERS TOPIC
+    const orderTopic = new sns.Topic(this, 'OrderEvetnsTopic', {
+      displayName: 'Order events topic',
+      topicName: 'order-events'
+    })
 
     // ORDERS LAMBDA
     this.ordersHandler = new lambdaNodeJS.NodejsFunction(this, 'OrdersFunction', {
