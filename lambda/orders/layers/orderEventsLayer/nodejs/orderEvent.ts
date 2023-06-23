@@ -12,7 +12,7 @@ export interface OrderEvent {
   email: string
   orderId: string
   shipping: {
-    tye: string
+    type: string
     carrier: string
   },
   billing: {
