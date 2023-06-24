@@ -5,10 +5,12 @@ import * as ssm from 'aws-cdk-lib/aws-ssm'
 import * as lambda from 'aws-cdk-lib/aws-lambda'
 import * as sns from 'aws-cdk-lib/aws-sns'
 import * as subs from 'aws-cdk-lib/aws-sns-subscriptions'
+import * as iam from 'aws-cdk-lib/aws-iam'
 import { Construct } from 'constructs'
 
 interface OrdersAppStackProps extends cdk.StackProps {
-  productsTable: dynamobdb.Table
+  productsTable: dynamobdb.Table,
+  eventsTable: dynamobdb.Table
 }
 
 export class OrdersAppStack extends cdk.Stack {
@@ -77,5 +79,40 @@ export class OrdersAppStack extends cdk.Stack {
     // TABLES ACCESS PERMISSIONS
     ordersTable.grantReadWriteData(this.ordersHandler)
     props.productsTable.grantReadData(this.ordersHandler)
+
+    // ORDER EVENTS LAMBDA
+    const orderEventsHandler = new lambdaNodeJS.NodejsFunction(this, 'OrderEventsFunction', {
+      functionName: 'OrderEventsFunction',
+      entry: 'lambda/orders/orderEventsFunction.ts',
+      handler: 'handler',
+      memorySize: 128,
+      timeout: cdk.Duration.seconds(2),
+      bundling: {
+        minify: true,
+        sourceMap: false
+      },
+      environment: {
+        EVENTS_TABLE: props.eventsTable.tableName
+      },
+      layers: [orderEventsLayer],
+      tracing: lambda.Tracing.ACTIVE,
+      insightsVersion: lambda.LambdaInsightsVersion.VERSION_1_0_119_0
+    })
+    // TOPIC ACCESS PERMISSIONS
+    orderTopic.addSubscription(new subs.LambdaSubscription(orderEventsHandler))
+
+    // ORDER EVENT TABLE POLICY
+    const eventsTablePolicy = new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: ['dynamobdb:PutItem'],
+      resources: [props.eventsTable.tableArn],
+      conditions: {
+        ['ForAllValues:StringLike']: {
+          'dynamodb: LeadingKeys': ['#order_*']
+        }
+      },
+    })
+    orderEventsHandler.addToRolePolicy(eventsTablePolicy)
+
   }
 }
