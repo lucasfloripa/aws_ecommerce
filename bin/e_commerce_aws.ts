@@ -30,7 +30,8 @@ const ordersAppLayerStack = new OrderAppLayersStack(app, 'OrdersAppLayers', { en
 const ordersAppStack = new OrdersAppStack(app, 'OrdersApp', {
   tags,
   env,
-  productsTable: productsAppStack.productsTable
+  productsTable: productsAppStack.productsTable,
+  eventsTable: eventsDdbStack.table
 })
 
 const ecommerceApiStack = new EcommerceApiStack(app, 'EcommerceApi', {
