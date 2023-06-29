@@ -86,7 +86,7 @@ export class OrdersAppStack extends cdk.Stack {
     // ORDER EVENTS LAMBDA
     const orderEventsHandler = new lambdaNodeJS.NodejsFunction(this, 'OrderEventsFunction', {
       functionName: 'OrderEventsFunction',
-      entry: 'lambda/orders/orderEventsFunction.ts',
+      entry: 'lambda/orders/ordersEventsFunction.ts',
       handler: 'handler',
       memorySize: 128,
       timeout: cdk.Duration.seconds(2),
