@@ -6,6 +6,8 @@ import * as lambda from 'aws-cdk-lib/aws-lambda'
 import * as sns from 'aws-cdk-lib/aws-sns'
 import * as subs from 'aws-cdk-lib/aws-sns-subscriptions'
 import * as iam from 'aws-cdk-lib/aws-iam'
+import * as sqs from 'aws-cdk-lib/aws-sqs'
+import * as lambdaEventSource from 'aws-cdk-lib/aws-lambda-event-sources'
 import { Construct } from 'constructs'
 
 interface OrdersAppStackProps extends cdk.StackProps {
@@ -57,6 +59,15 @@ export class OrdersAppStack extends cdk.Stack {
       topicName: 'order-events'
     })
 
+    // ORDER EVENT QUEUE
+    const orderEventsQueue = new sqs.Queue(this, 'OrderEventsQueue', {
+      queueName: 'order-events',
+      enforceSSL: false,
+      encryption: sqs.QueueEncryption.UNENCRYPTED
+    })
+    // TOPIC QUEUE ACCESS PERMISSIONS
+    orderTopic.addSubscription(new subs.SqsSubscription(orderEventsQueue))
+
     // ORDERS LAMBDA
     this.ordersHandler = new lambdaNodeJS.NodejsFunction(this, 'OrdersFunction', {
       functionName: 'OrdersFunction',
@@ -77,7 +88,7 @@ export class OrdersAppStack extends cdk.Stack {
       tracing: lambda.Tracing.ACTIVE,
       insightsVersion: lambda.LambdaInsightsVersion.VERSION_1_0_119_0
     })
-    // TOPIC ACCESS PERMISSIONS
+    // TOPIC LAMBDA PUBLISH PERMISSIONS
     orderTopic.grantPublish(this.ordersHandler)
     // TABLES ACCESS PERMISSIONS
     ordersTable.grantReadWriteData(this.ordersHandler)
@@ -101,7 +112,7 @@ export class OrdersAppStack extends cdk.Stack {
       tracing: lambda.Tracing.ACTIVE,
       insightsVersion: lambda.LambdaInsightsVersion.VERSION_1_0_119_0
     })
-    // TOPIC ACCESS PERMISSIONS
+    // TOPIC LAMBDA SUBS PERMISSIONS
     orderTopic.addSubscription(new subs.LambdaSubscription(orderEventsHandler))
 
     // ORDER EVENT TABLE POLICY
@@ -131,7 +142,7 @@ export class OrdersAppStack extends cdk.Stack {
       tracing: lambda.Tracing.ACTIVE,
       insightsVersion: lambda.LambdaInsightsVersion.VERSION_1_0_119_0
     })
-    // TOPIC ACCESS PERMISSIONS
+    // TOPIC LAMBDA SUBS PERMISSIONS
     orderTopic.addSubscription(new subs.LambdaSubscription(billingHandler, {
       filterPolicy: {
         eventType: sns.SubscriptionFilter.stringFilter({
