@@ -142,11 +142,7 @@ export class OrdersAppStack extends cdk.Stack {
       tracing: lambda.Tracing.ACTIVE,
       insightsVersion: lambda.LambdaInsightsVersion.VERSION_1_0_119_0
     })
-<<<<<<< HEAD
     // TOPIC LAMBDA SUBS PERMISSIONS
-=======
-    // TOPIC ACCESS PERMISSIONS
->>>>>>> b76554e729b2ce2eb55d4b3f46894766549fcd4e
     orderTopic.addSubscription(new subs.LambdaSubscription(billingHandler, {
       filterPolicy: {
         eventType: sns.SubscriptionFilter.stringFilter({
@@ -154,7 +150,6 @@ export class OrdersAppStack extends cdk.Stack {
         })
       }
     }))
-<<<<<<< HEAD
 
     // ORDER EMAILS LAMBDA
     const orderEmailsHandler = new lambdaNodeJS.NodejsFunction(this, 'OrderEmailsFunction', {
@@ -173,7 +168,5 @@ export class OrdersAppStack extends cdk.Stack {
     })
     orderEmailsHandler.addEventSource(new lambdaEventSource.SqsEventSource(orderEventsQueue))
     orderEventsQueue.grantConsumeMessages(orderEmailsHandler)
-=======
->>>>>>> b76554e729b2ce2eb55d4b3f46894766549fcd4e
   }
 }
