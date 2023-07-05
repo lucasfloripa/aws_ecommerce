@@ -66,7 +66,13 @@ export class OrdersAppStack extends cdk.Stack {
       encryption: sqs.QueueEncryption.UNENCRYPTED
     })
     // TOPIC QUEUE ACCESS PERMISSIONS
-    orderTopic.addSubscription(new subs.SqsSubscription(orderEventsQueue))
+    orderTopic.addSubscription(new subs.SqsSubscription(orderEventsQueue, {
+      filterPolicy: {
+        eventType: sns.SubscriptionFilter.stringFilter({
+          allowlist: ['ORDER_CREATED']
+        })
+      }
+    }))
 
     // ORDERS LAMBDA
     this.ordersHandler = new lambdaNodeJS.NodejsFunction(this, 'OrdersFunction', {
